@@ -44,6 +44,7 @@ export default {
       allowedDomains: '',
       isUpdatingAllowedDomains: false,
       isSettingDefaults: false,
+      archiveEmailOnConversationDelete: false,
     };
   },
   validations: {
@@ -83,6 +84,8 @@ export default {
         this.inbox.selected_feature_flags || []
       ).includes('allow_mobile_webview');
       this.allowedDomains = this.inbox.allowed_domains || '';
+      this.archiveEmailOnConversationDelete =
+        this.inbox.archive_email_on_conversation_delete || false;
       this.$nextTick(() => {
         this.isSettingDefaults = false;
       });
@@ -97,6 +100,22 @@ export default {
           formData: false,
           channel: {
             hmac_mandatory: this.hmacMandatory,
+          },
+        };
+        await this.$store.dispatch('inboxes/updateInbox', payload);
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
+      } catch (error) {
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
+      }
+    },
+    async handleArchiveEmailOnDeleteFlag() {
+      try {
+        const payload = {
+          id: this.inbox.id,
+          formData: false,
+          channel: {
+            archive_email_on_conversation_delete:
+              this.archiveEmailOnConversationDelete,
           },
         };
         await this.$store.dispatch('inboxes/updateInbox', payload);
@@ -356,6 +375,27 @@ export default {
     </div>
     <ImapSettings :inbox="inbox" />
     <SmtpSettings v-if="inbox.imap_enabled" :inbox="inbox" />
+    <SettingsFieldSection
+      :label="$t('INBOX_MGMT.SETTINGS_POPUP.ARCHIVE_EMAIL_ON_DELETE.TITLE')"
+      :help-text="
+        $t('INBOX_MGMT.SETTINGS_POPUP.ARCHIVE_EMAIL_ON_DELETE.SUB_TEXT')
+      "
+    >
+      <div class="flex gap-2 items-center">
+        <input
+          id="archiveEmailOnConversationDelete"
+          v-model="archiveEmailOnConversationDelete"
+          type="checkbox"
+          @change="handleArchiveEmailOnDeleteFlag"
+        />
+        <label
+          for="archiveEmailOnConversationDelete"
+          class="text-body-main text-n-slate-12"
+        >
+          {{ $t('INBOX_MGMT.SETTINGS_POPUP.ARCHIVE_EMAIL_ON_DELETE.LABEL') }}
+        </label>
+      </div>
+    </SettingsFieldSection>
   </div>
   <div v-else-if="isAWhatsAppChannel && !isATwilioChannel">
     <div v-if="inbox.provider_config">

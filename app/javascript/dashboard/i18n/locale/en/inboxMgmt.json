@@ -802,6 +802,11 @@
       "FORWARD_EMAIL_TITLE": "Forward to Email",
       "FORWARD_EMAIL_SUB_TEXT": "Start forwarding your emails to the following email address.",
       "FORWARD_EMAIL_NOT_CONFIGURED": "Forwarding emails to your inbox is currently disabled on this installation. To use this feature, it must be enabled by your administrator. Please get in touch with them to proceed.",
+      "ARCHIVE_EMAIL_ON_DELETE": {
+        "TITLE": "Archive source email on conversation delete",
+        "SUB_TEXT": "When a conversation is deleted, also remove the original email from the inbox on the mail server so it is not re-imported. On Gmail the email is archived (kept in All Mail), not permanently deleted.",
+        "LABEL": "Archive the original email when a conversation is deleted"
+      },
       "ALLOW_MESSAGES_AFTER_RESOLVED": "Allow messages after conversation resolved",
       "ALLOW_MESSAGES_AFTER_RESOLVED_SUB_TEXT": "Allow the end-users to send messages even after the conversation is resolved.",
       "WHATSAPP_SECTION_SUBHEADER": "This API Key is used for the integration with the WhatsApp APIs.",

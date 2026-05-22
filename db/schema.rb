@@ -476,6 +476,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_184600) do
     t.string "provider"
     t.string "imap_authentication", default: "plain"
     t.boolean "verified_for_sending", default: false, null: false
+    t.boolean "archive_email_on_conversation_delete", default: false, null: false
     t.index ["email"], name: "index_channel_email_on_email", unique: true
     t.index ["forward_to_email"], name: "index_channel_email_on_forward_to_email", unique: true
   end

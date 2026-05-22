@@ -120,6 +120,7 @@ class Conversation < ApplicationRecord
   before_save :ensure_snooze_until_reset
   before_create :determine_conversation_status
   before_create :ensure_waiting_since
+  before_destroy :archive_source_emails
 
   after_update_commit :execute_after_update_commit_callbacks
   after_create_commit :notify_conversation_creation
@@ -265,6 +266,18 @@ class Conversation < ApplicationRecord
 
   def ensure_waiting_since
     self.waiting_since = created_at
+  end
+
+  # When an email conversation is deleted, optionally remove the source email(s) from the
+  # mailbox INBOX so the next IMAP sync does not re-import and recreate the conversation.
+  def archive_source_emails
+    return unless inbox.email?
+    return unless inbox.channel.try(:archive_email_on_conversation_delete)
+
+    source_ids = messages.incoming.where.not(source_id: [nil, '']).pluck(:source_id).uniq
+    return if source_ids.blank?
+
+    Inboxes::ArchiveEmailsOnDeleteJob.perform_later(inbox.channel, source_ids)
   end
 
   def validate_additional_attributes
