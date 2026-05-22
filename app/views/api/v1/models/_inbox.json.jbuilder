@@ -81,6 +81,7 @@ if resource.email?
   json.email resource.channel.try(:email)
   json.forwarding_enabled ENV.fetch('MAILER_INBOUND_EMAIL_DOMAIN', '').present?
   json.forward_to_email resource.channel.try(:forward_to_email) if ENV.fetch('MAILER_INBOUND_EMAIL_DOMAIN', '').present?
+  json.archive_email_on_conversation_delete resource.channel.try(:archive_email_on_conversation_delete)
 
   ## IMAP
   if Current.account_user&.administrator?

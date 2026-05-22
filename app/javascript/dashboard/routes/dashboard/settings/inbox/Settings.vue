@@ -90,6 +90,7 @@ export default {
       emailCollectEnabled: false,
       senderNameType: 'friendly',
       businessName: '',
+      archiveEmailOnConversationDelete: false,
       locktoSingleConversation: false,
       allowMessagesAfterResolved: true,
       continuityViaEmail: true,
@@ -476,6 +477,8 @@ export default {
       this.channelWelcomeTagline = this.inbox.welcome_tagline || '';
       this.selectedFeatureFlags = this.inbox.selected_feature_flags || [];
       this.replyTime = this.inbox.reply_time;
+      this.archiveEmailOnConversationDelete =
+        this.inbox.archive_email_on_conversation_delete || false;
       this.locktoSingleConversation = this.inbox.lock_to_single_conversation;
       this.selectedPortalSlug = this.inbox.help_center
         ? this.inbox.help_center.slug
@@ -613,6 +616,21 @@ export default {
         this.showBusinessNameInput = false;
       } catch (error) {
         useAlert(error.message || this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
+      }
+    },
+    async handleArchiveEmailOnDeleteFlag() {
+      try {
+        await this.$store.dispatch('inboxes/updateInbox', {
+          id: this.currentInboxId,
+          formData: false,
+          channel: {
+            archive_email_on_conversation_delete:
+              this.archiveEmailOnConversationDelete,
+          },
+        });
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.SUCCESS_MESSAGE'));
+      } catch (error) {
+        useAlert(this.$t('INBOX_MGMT.EDIT.API.ERROR_MESSAGE'));
       }
     },
     handleImageUpload({ file, url }) {
@@ -928,6 +946,35 @@ export default {
                   @update="toggleSenderNameType"
                 />
               </template>
+            </SettingsFieldSection>
+
+            <SettingsFieldSection
+              v-if="isAnEmailChannel"
+              :label="
+                $t('INBOX_MGMT.SETTINGS_POPUP.ARCHIVE_EMAIL_ON_DELETE.TITLE')
+              "
+              :help-text="
+                $t('INBOX_MGMT.SETTINGS_POPUP.ARCHIVE_EMAIL_ON_DELETE.SUB_TEXT')
+              "
+            >
+              <div class="flex gap-2 items-center">
+                <input
+                  id="archiveEmailOnConversationDelete"
+                  v-model="archiveEmailOnConversationDelete"
+                  type="checkbox"
+                  @change="handleArchiveEmailOnDeleteFlag"
+                />
+                <label
+                  for="archiveEmailOnConversationDelete"
+                  class="text-body-main text-n-slate-12"
+                >
+                  {{
+                    $t(
+                      'INBOX_MGMT.SETTINGS_POPUP.ARCHIVE_EMAIL_ON_DELETE.LABEL'
+                    )
+                  }}
+                </label>
+              </div>
             </SettingsFieldSection>
 
             <SettingsAccordion
