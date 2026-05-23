@@ -70,5 +70,29 @@ RSpec.describe Imap::ArchiveEmailService do
         expect(imap).to have_received(:authenticate).with('XOAUTH2', channel.imap_login, 'oauth-token')
       end
     end
+
+    context 'with a Google (OAuth) channel' do
+      let(:channel) { create(:channel_email, :imap_email, account: account, provider: 'google') }
+      let(:token_service) { instance_double(Google::RefreshOauthTokenService, access_token: 'oauth-token') }
+
+      before do
+        allow(Google::RefreshOauthTokenService).to receive(:new).with(channel: channel).and_return(token_service)
+        allow(imap).to receive(:authenticate).with('XOAUTH2', channel.imap_login, 'oauth-token')
+      end
+
+      it 'archives via IMAP MOVE to [Gmail]/All Mail rather than +FLAGS \\Deleted + EXPUNGE' do
+        allow(imap).to receive(:uid_search).with(['HEADER', 'Message-ID', message_id]).and_return([42])
+        allow(imap).to receive(:uid_move).with([42], '[Gmail]/All Mail')
+        allow(imap).to receive(:uid_store)
+        allow(imap).to receive(:expunge)
+
+        result = described_class.new(channel: channel, message_ids: [message_id]).perform
+
+        expect(imap).to have_received(:uid_move).with([42], '[Gmail]/All Mail')
+        expect(imap).not_to have_received(:uid_store)
+        expect(imap).not_to have_received(:expunge)
+        expect(result).to eq([message_id])
+      end
+    end
   end
 end

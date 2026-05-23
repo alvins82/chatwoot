@@ -3,10 +3,17 @@ require 'net/imap'
 # Removes the given messages from the mailbox INBOX so Chatwoot does not re-import
 # them on the next sync after a conversation is deleted.
 #
-# On Gmail, expunging a message from INBOX removes the INBOX label, which archives
-# the message (it remains in All Mail) rather than permanently deleting it. Since
-# Chatwoot only ever polls INBOX, this is sufficient to stop re-import.
+# For Google OAuth inboxes we use IMAP MOVE to `[Gmail]/All Mail`. This is the
+# canonical Gmail archive operation: it removes the `\Inbox` label atomically and
+# is not affected by the per-account "When a message is marked as deleted" /
+# Auto-Expunge IMAP settings that make `+FLAGS \Deleted` + `EXPUNGE` a silent
+# no-op on many Gmail accounts.
+#
+# For plain IMAP servers we mark the message `\Deleted` and EXPUNGE, which is the
+# IMAP RFC behavior for removing a message from the current folder.
 class Imap::ArchiveEmailService
+  GMAIL_ALL_MAIL_MAILBOX = '[Gmail]/All Mail'.freeze
+
   pattr_initialize [:channel!, :message_ids!]
 
   def perform
@@ -35,13 +42,21 @@ class Imap::ArchiveEmailService
       return
     end
 
-    imap_client.uid_store(uids, '+FLAGS', [:Deleted])
-    imap_client.expunge
+    remove_from_inbox(uids)
     Rails.logger.info "[IMAP::ARCHIVE_EMAIL_SERVICE] Archived #{channel.email} message-id <#{message_id}>."
     message_id
   rescue StandardError => e
     Rails.logger.error "[IMAP::ARCHIVE_EMAIL_SERVICE] Failed to archive #{channel.email} message-id <#{message_id}>: #{e.message}"
     nil
+  end
+
+  def remove_from_inbox(uids)
+    if channel.google?
+      imap_client.uid_move(uids, GMAIL_ALL_MAIL_MAILBOX)
+    else
+      imap_client.uid_store(uids, '+FLAGS', [:Deleted])
+      imap_client.expunge
+    end
   end
 
   def imap_client
